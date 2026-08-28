@@ -1,0 +1,16 @@
+﻿{
+  "type": "code",
+  "modid": "vsvaogc",
+  "name": "Client MeshRef Leak Fix",
+  "description": "Client-only. When Vintage Story garbage-collects an undisposed MeshRef, this actually frees the OpenGL VAO on the render thread instead of leaking VRAM. Stops the session-long FPS slide and hitching from MeshRef leaks (skeps, handbook, HD meshes, GUI leftovers). 1.1.4: outer try/catch on Harmony Finalize prefix and ExecuteMainThreadTasks drain postfix so a dispose failure cannot crash the client. Adaptive drain. Metrics off render thread. DLL-only zip. No GC.Collect, no key injection.",
+  "version": "1.1.4",
+  "side": "Client",
+  "requiredOnServer": false,
+  "requiredOnClient": false,
+  "authors": ["IllLeroySquad"],
+  "contributors": ["Fox"],
+  "website": "https://mods.vintagestory.at/vsvaogc",
+  "dependencies": {
+    "game": "1.22.0"
+  }
+}

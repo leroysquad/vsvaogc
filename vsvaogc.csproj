@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>$(MSBuildProjectDirectory)\bin\Release\</OutputPath>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <VintagestoryPath Condition="'$(VintagestoryPath)' == ''">$(APPDATA)\Vintagestory</VintagestoryPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="dist\**" />
+    <None Remove="dist\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="VintagestoryAPI">
+      <HintPath>$(VintagestoryPath)\VintagestoryAPI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="VintagestoryLib">
+      <HintPath>$(VintagestoryPath)\VintagestoryLib.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(VintagestoryPath)\Lib\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+  <Target Name="CopyModInfo" AfterTargets="Build">
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\modinfo.json" DestinationFolder="$(OutputPath)" />
+  </Target>
+  <!-- Release zip is DLL-only. Shipping src/ makes VS compile the folder and skip the ModSystem. -->
+  <Target Name="PackReleaseZip" AfterTargets="CopyModInfo" Condition="'$(Configuration)'=='Release'">
+    <PropertyGroup>
+      <_PackDir>$(MSBuildProjectDirectory)\dist\vsvaogc_1.1.4</_PackDir>
+      <_PackZip>$(MSBuildProjectDirectory)\dist\vsvaogc_1.1.4.zip</_PackZip>
+    </PropertyGroup>
+    <ItemGroup>
+      <_PackFiles Include="$(OutputPath)modinfo.json" />
+      <_PackFiles Include="$(OutputPath)vsvaogc.dll" />
+      <_PackFiles Include="$(OutputPath)vsvaogc.pdb" />
+    </ItemGroup>
+    <RemoveDir Directories="$(_PackDir)" />
+    <MakeDir Directories="$(_PackDir)" />
+    <Copy SourceFiles="@(_PackFiles)" DestinationFolder="$(_PackDir)" />
+    <Delete Files="$(_PackZip)" />
+    <ZipDirectory SourceDirectory="$(_PackDir)" DestinationFile="$(_PackZip)" Overwrite="true" />
+  </Target>
+</Project>
