@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using HarmonyLib;
 using Vintagestory.API.Client;
@@ -13,7 +13,7 @@ namespace VsVaoGc
         public const string HarmonyId = "vsvaogc";
         public const string Version = "1.1.4";
 
-        // Steady-state budget; scales up when the queue is backing up.
+        // dispose more per frame if the queue is getting long
         const int BaseDisposePerFrame = 16;
         const int ElevatedDisposePerFrame = 32;
         const int HighDisposePerFrame = 64;
@@ -36,14 +36,14 @@ namespace VsVaoGc
 
         public override void Start(ICoreAPI api)
         {
-            api.Logger.Notification("[vsvaogc] " + Version + " assembly loaded (Start). DLL-only install - do not ship src/ in Mods.");
+            api.Logger.Notification("[vsvaogc] " + Version + " loaded. dll only, don't drop src into Mods.");
         }
 
         public override void StartClientSide(ICoreClientAPI capi)
         {
             log = capi.Logger;
             capiForDispose = capi;
-            log.Notification("[vsvaogc] " + Version + " StartClientSide - patching, then arming FrameGuard.");
+            log.Notification("[vsvaogc] " + Version + " client start, applying patches.");
 
             try
             {
@@ -59,7 +59,7 @@ namespace VsVaoGc
             }
             catch (Exception e)
             {
-                log.Error("[vsvaogc] Harmony patch failed - leak fixer off, FrameGuard still arms. {0}", e);
+                log.Error("[vsvaogc] Harmony patch failed, leak fixer off. FrameGuard still arms. {0}", e);
             }
 
             guard = new FrameGuard(capi);
@@ -76,7 +76,7 @@ namespace VsVaoGc
                         + "  pending=" + Pending.Count);
                 });
 
-            log.Notification("[vsvaogc] " + Version + " armed. Adaptive drain. Outer try/catch on Harmony hooks. No GC.Collect.");
+            log.Notification("[vsvaogc] " + Version + " running. no GC.Collect.");
         }
 
         public override void Dispose()
@@ -131,7 +131,7 @@ namespace VsVaoGc
 
         static class VaoFinalizePatch
         {
-            // return true = run original Finalize; false = we queued it, skip original.
+            // true = let vanilla Finalize run. false = we queued it.
             public static bool Prefix(object __instance)
             {
                 try
@@ -143,7 +143,7 @@ namespace VsVaoGc
                 }
                 catch (Exception e)
                 {
-                    // Never take down the GC finalizer path. Fall through to vanilla Finalize.
+                    // don't crash the gc thread. just let vanilla Finalize run.
                     log?.Warning("[vsvaogc] Finalize prefix failed, falling back to vanilla: {0}", e.Message);
                     return true;
                 }
@@ -154,9 +154,7 @@ namespace VsVaoGc
         {
             public static void Postfix()
             {
-                // Outer catch: ExecuteMainThreadTasks runs entity loads, GUI, etc.
-                // Our postfix must never escalate a Dispose/queue bug into a client crash.
-                // (VS lists every Harmony ID that patched this method when anything inside it throws.)
+                // this method also runs entity loads and gui. if we throw, vs lists every harmony id on it.
                 try
                 {
                     Drain(BudgetForPending(Pending.Count));
@@ -169,3 +167,4 @@ namespace VsVaoGc
         }
     }
 }
+

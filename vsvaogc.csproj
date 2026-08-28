@@ -30,7 +30,7 @@
   <Target Name="CopyModInfo" AfterTargets="Build">
     <Copy SourceFiles="$(MSBuildProjectDirectory)\modinfo.json" DestinationFolder="$(OutputPath)" />
   </Target>
-  <!-- Release zip is DLL-only. Shipping src/ makes VS compile the folder and skip the ModSystem. -->
+  <!-- zip is dll only. if you put src in it, vs compiles the folder and skips the actual mod. -->
   <Target Name="PackReleaseZip" AfterTargets="CopyModInfo" Condition="'$(Configuration)'=='Release'">
     <PropertyGroup>
       <_PackDir>$(MSBuildProjectDirectory)\dist\vsvaogc_1.1.4</_PackDir>

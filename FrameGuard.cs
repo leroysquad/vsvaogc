@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -53,8 +53,7 @@ namespace VsVaoGc
                 Correct();
             }
 
-            // Snapshot + schedule disk write off the render thread.
-            // Never File.WriteAllText / Array.Sort here — both hitch at high FPS.
+            // write metrics off this thread. don't sort or hit disk here, it hitchs at high fps.
             if (sinceWrite.ElapsedMilliseconds >= 1000)
             {
                 sinceWrite.Restart();
@@ -67,7 +66,7 @@ namespace VsVaoGc
             if (sinceCorrect.ElapsedMilliseconds < 400) return;
             sinceCorrect.Restart();
             corrections++;
-            // Extra drain only. Never GC.Collect — that stalls the render thread.
+            // extra drain only. GC.Collect on the render thread is a stall.
             VaoGcMod.Drain(256);
         }
 
@@ -95,7 +94,7 @@ namespace VsVaoGc
 
         void ScheduleMetricsWrite(float fps, float avg, float p95, float lastMs, bool hitch)
         {
-            // Drop if a previous write is still in flight — prefer fresh samples later.
+            // if a write is already going, skip. next one will be newer anyway.
             if (Interlocked.CompareExchange(ref writeQueued, 1, 0) != 0) return;
 
             int hitches = hitchCount;
@@ -144,3 +143,4 @@ namespace VsVaoGc
         public void Dispose() { }
     }
 }
+
